@@ -65,7 +65,7 @@ Requires Xcode Command Line Tools and Swift 5.9+.
 
 ## Notes
 
-– Each preset is a shell command run in a new Terminal window.
+– Each preset is a shell command run in a new Terminal window; the working directory is your home folder unless the command `cd`s first.
 – Preset results show pass/fail in the menu bar icon.
 – No Dock icon; lives entirely in the menu bar.
 – If a preset never opens Terminal, allow Focus Build under **System Settings → Privacy & Security → Automation** (and grant Terminal access when prompted).
