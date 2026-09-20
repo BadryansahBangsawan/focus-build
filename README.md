@@ -89,6 +89,9 @@ Some tools buffer output. Add `--no-silent` / `2>&1` or force unbuffered output 
 **Gatekeeper blocks after an update**  
 Re-run `xattr -cr /Applications/FocusBuild.app && open /Applications/FocusBuild.app` after each manual update from Releases; Homebrew Cask handles this automatically.
 
+**Presets stop opening Terminal after `brew upgrade --cask`**  
+macOS treats the upgraded binary as a new app. Re-enable Focus Build under **System Settings → Privacy & Security → Automation → Terminal**, then run a preset once to confirm.
+
 ---
 
 <div align="center">
