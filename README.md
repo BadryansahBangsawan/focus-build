@@ -2,101 +2,187 @@
 
 # Focus Build
 
-**Run test and build presets without leaving the menu bar.**  
-macOS menu extra — lives in the menu bar, no Dock icon.
+**Run a named preset (`pnpm test`, `npm test`, `cargo test`, `swift test`) from the extra. Stop it, or watch pids `ps` already started.**
+
+Menu extra for macOS 14+. Lives on the **right** of the menu bar. No Dock icon.
 
 <br/>
 
-[![Latest Release](https://img.shields.io/github/v/release/BadryansahBangsawan/focus-build?style=flat-square&color=76B900&label=latest)](https://github.com/BadryansahBangsawan/focus-build/releases/latest)
+[![Build](https://github.com/BadryansahBangsawan/focus-build/actions/workflows/ci.yml/badge.svg)](https://github.com/BadryansahBangsawan/focus-build/actions/workflows/ci.yml)
+[![Latest Release](https://img.shields.io/github/v/release/BadryansahBangsawan/focus-build?style=flat-square)](https://github.com/BadryansahBangsawan/focus-build/releases/latest)
 [![macOS](https://img.shields.io/badge/macOS-14%2B-black?style=flat-square&logo=apple)](https://github.com/BadryansahBangsawan/focus-build/releases/latest)
-[![Swift](https://img.shields.io/badge/Swift-5.9%2B-F05138?style=flat-square&logo=swift&logoColor=white)](https://swift.org)
 
 <br/>
+
+| | |
+|---|---|
+| Product | `FocusBuild` |
+| Bundle ID | `engineer.badry.focusbuild` |
+| Cask | `focus-build` |
+| Status item | SF Symbol `hammer` |
+| Panel | opaque ~360×420 pt |
 
 </div>
+
+---
+
+## What you get
+
+| Piece | Behavior |
+|---|---|
+| **Presets** | name, command, arguments, cwd. Empty cwd → **Choose folder** on run. Defaults: `pnpm test`, `npm test`, `cargo test`, `swift test` via `/usr/bin/env`. |
+| **Run** | **Run** / **Stop**. Stop sends SIGTERM, then SIGKILL after 3 seconds if the pid is still alive. |
+| **Detected** | `/bin/ps -axo pid=,comm=,args=` every 2s. Needles: `pnpm test`, `npm test`, `cargo test`, `swift test`, `xcodebuild`. |
+| **Log** | Last 200 lines. **Copy last log**. Exit: `<name> succeeded` or `<name> failed (code N)`. |
+| **Empty** | **Nothing running**. Action: **Run** plus the first preset name, or **Open Settings**. |
+| **Notify** | `UNUserNotificationCenter` request on launch (alert / sound / badge). Title `Focus Build`. |
+| **Login** | Open at Login from Settings (`SMAppService`). |
 
 ---
 
 ## Download
 
-| Platform | File |
+| File | Use |
 |---|---|
-| **macOS** (Apple Silicon & Intel, macOS 14+) | `FocusBuild-*-macos.zip` |
+| **`FocusBuild.app.zip`** | Homebrew cask / unzip, drag **FocusBuild** onto **Applications** |
 
-[Go to Releases](https://github.com/BadryansahBangsawan/focus-build/releases/latest)
+**[Releases](https://github.com/BadryansahBangsawan/focus-build/releases/latest)**
 
 ---
 
-## Installation
+## Install
 
-### Homebrew (recommended)
+### Homebrew
 
 ```bash
 brew tap BadryansahBangsawan/mac-menu-apps
+brew trust BadryansahBangsawan/mac-menu-apps
 brew install --cask focus-build
 ```
 
-A **Focus Build** icon appears in the menu bar. If Gatekeeper blocks it on first launch:
+`brew trust` is required on Homebrew 6 or `brew install --cask` refuses the tap.
+
+First open (ad-hoc signed):
 
 ```bash
-xattr -cr /Applications/FocusBuild.app && open /Applications/FocusBuild.app
+xattr -cr /Applications/FocusBuild.app
+open /Applications/FocusBuild.app
 ```
 
-Or: right-click the app, Open, then Open again. Still blocked? **System Settings → Privacy & Security → Open Anyway**.
+Still blocked: System Settings → Privacy & Security → Open Anyway.
 
-### GitHub Releases
-
-1. Download `FocusBuild-*-macos.zip` from [Releases](https://github.com/BadryansahBangsawan/focus-build/releases/latest)
-2. Unzip and drag **FocusBuild** into Applications
-3. On first launch, run the xattr command above if Gatekeeper blocks it
-
-### Build from source
-
-```bash
-git clone https://github.com/BadryansahBangsawan/focus-build.git
-cd focus-build
-bash package-app.sh
-open dist/FocusBuild.app
-```
-
-Requires Xcode Command Line Tools and Swift 5.9+.
+Do not run `dist/FocusBuild.app` while `/Applications/FocusBuild.app` is running (same bundle ID).
 
 ---
 
-## Notes
+## How to open
 
-– Each preset is a shell command run in a new Terminal window; the working directory is your home folder unless the command `cd`s first.
-– Preset results show pass/fail in the menu bar icon.
-– No Dock icon; lives entirely in the menu bar.
-– If a preset never opens Terminal, allow Focus Build under **System Settings → Privacy & Security → Automation** (and grant Terminal access when prompted).
+This is an `LSUIElement` extra. Proof it is running is the **hammer** status item on the **right** of the menu bar, not a window from Finder or Launchpad.
+
+1. Click that extra. The panel is opaque ~360×420 pt, not a 10px strip.
+2. If the bar is full, look behind the Control Center overflow chevron **«**.
+3. Double-clicking in Finder/Launchpad only changes the left-side app name. That is expected. There is no Dock icon.
+
+---
+
+## Usage
+
+1. Click **Run** next to a preset. If cwd is empty, pick a folder (**Choose folder**). Missing path: **Working directory does not exist:** plus the path.
+2. Empty: **Nothing running** — run the first preset, or **Open Settings**.
+3. **Stop** terminates the spawned process.
+4. **Detected** lists pids whose args contain a test needle. `ps` failures are a red label, not a crash.
+5. **Settings** at the bottom: presets (**No presets** / **Add** / **Delete**), Open at Login, Quit.
+
+---
+
+## Permissions
+
+No `NS*UsageDescription` keys. On launch, `UNUserNotificationCenter` requests alert / sound / badge. Deny is allowed; the extra still runs.
+
+---
+
+## Data
+
+| What | Where |
+|---|---|
+| Presets | `~/Library/Application Support/Focus Build/presets.json` |
+| Open at Login | `SMAppService.mainApp` (Settings toggle) |
+
+Decode failure → empty list plus a red banner. The extra does not crash. Missing file seeds the four default presets.
+
+---
+
+## Privacy
+
+No network of its own. Commands you configure run locally. Notifications stay on this Mac.
+
+---
+
+## Uninstall
+
+```bash
+brew uninstall --cask focus-build
+```
+
+Or delete `/Applications/FocusBuild.app`. Then:
+
+```bash
+rm -rf "$HOME/Library/Application Support/Focus Build"
+```
+
+Turn off **Focus Build** in System Settings → General → Login Items if it remains.
 
 ---
 
 ## Troubleshooting
 
-**Preset runs but the command fails immediately**  
-Presets run in a non-login shell — tools installed via Homebrew or `nvm` may not be on `$PATH`. Prefix your preset command with a shell path fix:
+| What you see | What to do |
+|---|---|
+| Finder “opens” nothing / no Dock icon | Click the **hammer** extra on the right of the menu bar. |
+| Extra missing | Overflow **«**, or `pgrep -x FocusBuild` then `open /Applications/FocusBuild.app`. |
+| “Damaged” / cannot verify | `xattr -cr /Applications/FocusBuild.app`. `spctl --assess` is `rejected` even when it runs. |
+| `brew install --cask` refuses the tap | `brew trust BadryansahBangsawan/mac-menu-apps` |
+| **Nothing running** | Run a preset, or wait for a detected test pid. |
+| **Working directory does not exist:** | Pick a folder, or fix the preset cwd in Settings. |
+| `ps failed` | `/bin/ps` stderr as a red label. |
+| ~10px empty strip under the bar | Reinstall from this repo. |
+
+---
+
+## Build from source
+
 ```bash
-export PATH="/opt/homebrew/bin:$HOME/.nvm/versions/node/$(node -v)/bin:$PATH" && npm test
+git clone https://github.com/BadryansahBangsawan/focus-build.git
+cd focus-build
+swift build -c release --product FocusBuild
+bash package-app.sh
+open dist/FocusBuild.app
 ```
 
-**Menu bar icon stays grey after a run**  
-The icon updates only when a preset exits. If a command hangs (e.g. a watcher with no `--run-once`), kill the Terminal tab and add an explicit exit or timeout to the preset.
+Tag `v*` runs CI: `FocusBuild.app.zip`. Never commit `dist/`.
 
-**Build output is empty**  
-Some tools buffer output. Add `--no-silent` / `2>&1` or force unbuffered output (`PYTHONUNBUFFERED=1`, `--reporter spec`) so results reach the menu bar.
+Layout: `Sources/` (SwiftPM executable), `Info.plist`, `Assets/AppIcon.icns`, `package-app.sh`. `FunTheme.swift` is copied verbatim (no shared package).
 
-**Gatekeeper blocks after an update**  
-Re-run `xattr -cr /Applications/FocusBuild.app && open /Applications/FocusBuild.app` after each manual update from Releases; Homebrew Cask handles this automatically.
+---
 
-**Presets stop opening Terminal after `brew upgrade --cask`**  
-macOS treats the upgraded binary as a new app. Re-enable Focus Build under **System Settings → Privacy & Security → Automation → Terminal**, then run a preset once to confirm.
+## FAQ
+
+**Why is there no Dock icon?**  
+It is a menu extra. Click the hammer item on the **right** of the menu bar.
+
+**Do I have to allow notifications?**  
+No. Deny is allowed. End-of-run banners in the panel still show `<name> succeeded` / `failed (code N)`.
+
+**Where are presets stored?**  
+`~/Library/Application Support/Focus Build/presets.json`.
+
+**How do I stop it opening at login?**  
+Settings in the panel, or System Settings → General → Login Items → **Focus Build**.
 
 ---
 
 <div align="center">
 
-Made with ♥ for developers who prefer staying in the flow.
+[MIT](LICENSE)
 
 </div>
-
